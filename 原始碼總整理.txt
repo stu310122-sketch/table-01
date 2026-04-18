@@ -1,0 +1,1859 @@
+/* ==========================================
+   package.json 
+   ========================================== */
+
+{
+  "name": "react-example",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port=3000 --host=0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview",
+    "clean": "rm -rf dist",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google/genai": "^1.29.0",
+    "@tailwindcss/vite": "^4.1.14",
+    "@tweenjs/tween.js": "^25.0.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "better-sqlite3": "^12.4.1",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "three": "^0.183.1",
+    "vite": "^6.2.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.14.0",
+    "@types/three": "^0.183.1",
+    "autoprefixer": "^10.4.21",
+    "tailwindcss": "^4.1.14",
+    "tsx": "^4.21.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0",
+    "vite-plugin-singlefile": "^2.3.2"
+  }
+}
+
+
+/* ==========================================
+   vite.config.ts 
+   ========================================== */
+
+import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+import {defineConfig, loadEnv} from 'vite';
+import { viteSingleFile } from 'vite-plugin-singlefile';
+
+export default defineConfig(({mode}) => {
+  const env = loadEnv(mode, '.', '');
+  return {
+    base: './',
+    plugins: [react(), tailwindcss()],
+    define: {
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+    },
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, '.'),
+      },
+    },
+    server: {
+      // HMR is disabled in AI Studio via DISABLE_HMR env var.
+      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
+      hmr: process.env.DISABLE_HMR !== 'true',
+    },
+  };
+});
+
+
+/* ==========================================
+   index.html 
+   ========================================== */
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>恆河水之元素週期表</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/app.jsx"></script>
+  </body>
+</html>
+
+
+
+/* ==========================================
+   styles.css 
+   ========================================== */
+
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Noto Sans TC', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --color-tech-bg-start: #02111d;
+  --color-tech-bg-end: #041f2e;
+  
+  --color-tech-cyan: #00f0ff;
+  --color-tech-cyan-dim: rgba(0, 240, 255, 0.2);
+  --color-tech-blue: #0a2540;
+  --color-tech-green: #0d2b26;
+  --color-tech-red: #2b1115;
+  --color-tech-border: rgba(255, 255, 255, 0.1);
+
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-fade-in: fadeIn 0.2s ease-out;
+  --animate-bounce-slight: bounceSlight 2s infinite;
+  --animate-shake: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+  --animate-glow-pulse: glowPulse 2s infinite alternate;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes fadeIn {
+    0% { opacity: 0; transform: scale(0.95); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes bounceSlight {
+    0%, 100% { transform: translateY(-5%); }
+    50% { transform: translateY(0); }
+  }
+  @keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+  }
+  @keyframes glowPulse {
+    0% { text-shadow: 0 0 10px rgba(0, 240, 255, 0.5), 0 0 20px rgba(0, 240, 255, 0.3); }
+    100% { text-shadow: 0 0 20px rgba(0, 240, 255, 0.8), 0 0 30px rgba(0, 240, 255, 0.5); }
+  }
+}
+
+body { 
+    background: linear-gradient(135deg, #02111d 0%, #041f2e 100%);
+    color: #ffffff; 
+    min-height: 100vh; 
+    overflow-x: hidden; 
+    user-select: none; 
+}
+
+.glass-panel { 
+    background: rgba(10, 37, 64, 0.6); 
+    backdrop-filter: blur(16px); 
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.05), 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.tech-card {
+    background: linear-gradient(135deg, rgba(var(--cat-color-rgb, 10, 17, 40), 0.25) 0%, rgba(var(--cat-color-rgb, 10, 17, 40), 0.05) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(var(--cat-color-rgb, 255, 255, 255), 0.15);
+    border-top: 1px solid rgba(0, 240, 255, 0.4);
+    box-shadow: 
+        inset 0 1px 2px rgba(0, 240, 255, 0.3), 
+        inset 0 -1px 3px rgba(0, 0, 0, 0.5), 
+        0 4px 15px rgba(0, 0, 0, 0.4);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.tech-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(105deg, transparent 20%, rgba(0, 240, 255, 0.05) 25%, transparent 30%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.tech-card:hover {
+    transform: translateY(-2px) scale(1.05);
+    background: linear-gradient(135deg, rgba(var(--cat-color-rgb, 10, 17, 40), 0.4) 0%, rgba(var(--cat-color-rgb, 10, 17, 40), 0.1) 100%);
+    box-shadow: 
+        inset 0 1px 3px rgba(0, 240, 255, 0.5), 
+        inset 0 0 15px rgba(var(--cat-color-rgb, 255, 255, 255), 0.2), 
+        0 8px 25px rgba(0, 240, 255, 0.4);
+    border-color: rgba(var(--cat-color-rgb, 255, 255, 255), 0.4);
+    border-top-color: rgba(0, 240, 255, 0.8);
+    z-index: 20;
+}
+
+.glowing-text {
+    color: #00f0ff;
+    animation: glowPulse 2s infinite alternate;
+}
+
+.pt-grid { display: grid; grid-template-columns: repeat(18, minmax(0, 1fr)); gap: 4px; width: 100%; min-width: 800px; padding-bottom: 80px; }
+@media (min-width: 768px) { .pt-grid { min-width: 1000px; gap: 8px; } }
+
+.phase-dot-circle { position: absolute; bottom: 4px; right: 4px; width: 6px; height: 6px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.8); }
+@media (min-width: 768px) { .phase-dot-circle { bottom: 6px; right: 6px; width: 8px; height: 8px; } }
+
+.custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.3); border-radius: 3px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0, 240, 255, 0.6); }
+
+.canvas-interactive { touch-action: none; cursor: grab; }
+.canvas-interactive:active { cursor: grabbing; }
+
+.gacha-card { transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.gacha-card:hover { transform: scale(1.05) translateY(-10px); }
+.pattern-grid { background-image: radial-gradient(circle, rgba(0,240,255,0.1) 1.5px, transparent 1.5px); background-size: 12px 12px; }
+
+.scanlines {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.3;
+}
+
+.wood-border-container {
+    padding: 0;
+    background: transparent;
+    min-height: 100vh;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.wood-border-inner {
+    background: transparent;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Force 0.1s transition for all buttons and clickable elements */
+button, 
+a, 
+.cursor-pointer, 
+.tech-card:not(.element-card),
+[role="button"]:not(.element-card) {
+    transition-duration: 0.1s !important;
+}
+
+.element-card {
+    transition: none !important;
+}
+
+
+/* ==========================================
+   App.tsx 
+   ========================================== */
+
+import React, { useState, useTransition } from 'react';
+import { getElements, ElementData } from './src/data';
+import { OrbitalModal } from './src/components/OrbitalModal';
+import { ElementModal } from './src/components/ElementModal';
+import { QuizView } from './src/components/QuizView';
+import { HomeView } from './src/components/HomeView';
+import { TableView } from './src/components/TableView';
+import { OrbitalsGalleryView } from './src/components/OrbitalsGalleryView';
+import { ElementListView } from './src/components/ElementListView';
+import { GachaView } from './src/components/GachaView';
+import AtomicPackingView from './src/components/AtomicPackingView';
+import { SplashScreen } from './src/components/SplashScreen';
+
+export default function App() {
+    const [view, setView] = useState('home'); 
+    const [tableMode, setTableMode] = useState('basic'); 
+    const [selectedEl, setSelectedEl] = useState<ElementData | null>(null);
+    const [selectedOrbital, setSelectedOrbital] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [phaseFilter, setPhaseFilter] = useState<string | number>('all'); 
+    const [isPending, startTransition] = useTransition();
+
+    const elements = React.useMemo(() => getElements(), []);
+
+    const handleNavigate = (newView: string) => {
+        startTransition(() => {
+            setView(newView);
+        });
+    };
+
+    const renderView = () => {
+        const backToHome = () => handleNavigate('home');
+
+        switch(view) {
+            case 'home': return <HomeView onNavigate={handleNavigate} />;
+            case 'table': return (
+                <TableView 
+                    elements={elements}
+                    tableMode={tableMode}
+                    setTableMode={setTableMode}
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    phaseFilter={phaseFilter}
+                    setPhaseFilter={setPhaseFilter}
+                    onSelectElement={setSelectedEl}
+                    onSelectOrbital={setSelectedOrbital}
+                    onBack={backToHome}
+                />
+            );
+            case 'orbitals_gallery': return (
+                <OrbitalsGalleryView 
+                    onSelectOrbital={setSelectedOrbital}
+                    onBack={backToHome}
+                />
+            );
+            case 'list': return (
+                <ElementListView 
+                    elements={elements}
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    onSelectElement={setSelectedEl}
+                    onBack={backToHome}
+                />
+            );
+            case 'quiz': return <QuizView elements={elements} onBack={backToHome} />;
+            case 'stats': return <AtomicPackingView onBack={backToHome} />;
+            case 'gacha': return (
+                <GachaView 
+                    elements={elements}
+                    onDraw={setSelectedEl}
+                    onBack={backToHome}
+                />
+            );
+            default: return null;
+        }
+    };
+
+    return (
+        <div className="wood-border-container">
+            <SplashScreen />
+            <div className={`wood-border-inner transition-opacity duration-300 ${isPending ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                {renderView()}
+                {selectedEl && <ElementModal element={selectedEl} onClose={() => setSelectedEl(null)} tableMode={tableMode} />}
+                {selectedOrbital && <OrbitalModal type={selectedOrbital} onClose={() => setSelectedOrbital(null)} />}
+            </div>
+        </div>
+    );
+}
+
+
+/* ==========================================
+   app.jsx 
+   ========================================== */
+
+import {StrictMode} from 'react';
+import {createRoot} from 'react-dom/client';
+import App from './App';
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
+
+
+/* ==========================================
+   src/data.ts 
+   ========================================== */
+
+export const elementRawData = [
+    [1,"H","氫",1.008,"nonmetal","s",2,"1s¹"], [2,"He","氦",4.0026,"noble-gas","s",2,"1s²"],
+    [3,"Li","鋰",6.94,"alkali","s",0,"[He] 2s¹"], [4,"Be","鈹",9.0122,"alkaline","s",0,"[He] 2s²"],
+    [5,"B","硼",10.81,"metalloid","p",0,"[He] 2s² 2p¹"], [6,"C","碳",12.011,"nonmetal","p",0,"[He] 2s² 2p²"],
+    [7,"N","氮",14.007,"nonmetal","p",2,"[He] 2s² 2p³"], [8,"O","氧",15.999,"nonmetal","p",2,"[He] 2s² 2p⁴"],
+    [9,"F","氟",18.998,"halogen","p",2,"[He] 2s² 2p⁵"], [10,"Ne","氖",20.180,"noble-gas","p",2,"[He] 2s² 2p⁶"],
+    [11,"Na","鈉",22.990,"alkali","s",0,"[Ne] 3s¹"], [12,"Mg","鎂",24.305,"alkaline","s",0,"[Ne] 3s²"],
+    [13,"Al","鋁",26.982,"post-transition","p",0,"[Ne] 3s² 3p¹"], [14,"Si","矽",28.085,"metalloid","p",0,"[Ne] 3s² 3p²"],
+    [15,"P","磷",30.974,"nonmetal","p",0,"[Ne] 3s² 3p³"], [16,"S","硫",32.06,"nonmetal","p",0,"[Ne] 3s² 3p⁴"],
+    [17,"Cl","氯",35.45,"halogen","p",2,"[Ne] 3s² 3p⁵"], [18,"Ar","氬",39.948,"noble-gas","p",2,"[Ne] 3s² 3p⁶"],
+    [19,"K","鉀",39.098,"alkali","s",0,"[Ar] 4s¹"], [20,"Ca","鈣",40.078,"alkaline","s",0,"[Ar] 4s²"],
+    [21,"Sc","鈧",44.956,"transition","d",0,"[Ar] 3d¹ 4s²"], [22,"Ti","鈦",47.867,"transition","d",0,"[Ar] 3d² 4s²"],
+    [23,"V","釩",50.942,"transition","d",0,"[Ar] 3d³ 4s²"], [24,"Cr","鉻",51.996,"transition","d",0,"[Ar] 3d⁵ 4s¹"],
+    [25,"Mn","錳",54.938,"transition","d",0,"[Ar] 3d⁵ 4s²"], [26,"Fe","鐵",55.845,"transition","d",0,"[Ar] 3d⁶ 4s²"],
+    [27,"Co","鈷",58.933,"transition","d",0,"[Ar] 3d⁷ 4s²"], [28,"Ni","鎳",58.693,"transition","d",0,"[Ar] 3d⁸ 4s²"],
+    [29,"Cu","銅",63.546,"transition","d",0,"[Ar] 3d¹⁰ 4s¹"], [30,"Zn","鋅",65.38,"transition","d",0,"[Ar] 3d¹⁰ 4s²"],
+    [31,"Ga","鎵",69.723,"post-transition","p",0,"[Ar] 3d¹⁰ 4s² 4p¹"], [32,"Ge","鍺",72.630,"metalloid","p",0,"[Ar] 3d¹⁰ 4s² 4p²"],
+    [33,"As","砷",74.922,"metalloid","p",0,"[Ar] 3d¹⁰ 4s² 4p³"], [34,"Se","硒",78.96,"nonmetal","p",0,"[Ar] 3d¹⁰ 4s² 4p⁴"],
+    [35,"Br","溴",79.904,"halogen","p",1,"[Ar] 3d¹⁰ 4s² 4p⁵"], [36,"Kr","氪",83.798,"noble-gas","p",2,"[Ar] 3d¹⁰ 4s² 4p⁶"],
+    [37,"Rb","銣",85.468,"alkali","s",0,"[Kr] 5s¹"], [38,"Sr","鍶",87.62,"alkaline","s",0,"[Kr] 5s²"],
+    [39,"Y","釔",88.906,"transition","d",0,"[Kr] 4d¹ 5s²"], [40,"Zr","鋯",91.224,"transition","d",0,"[Kr] 4d² 5s²"],
+    [41,"Nb","鈮",92.906,"transition","d",0,"[Kr] 4d⁴ 5s¹"], [42,"Mo","鉬",95.95,"transition","d",0,"[Kr] 4d⁵ 5s¹"],
+    [43,"Tc","鎝",98,"transition","d",0,"[Kr] 4d⁵ 5s²"], [44,"Ru","釕",101.07,"transition","d",0,"[Kr] 4d⁷ 5s¹"],
+    [45,"Rh","銠",102.91,"transition","d",0,"[Kr] 4d⁸ 5s¹"], [46,"Pd","鈀",106.42,"transition","d",0,"[Kr] 4d¹⁰"],
+    [47,"Ag","銀",107.87,"transition","d",0,"[Kr] 4d¹⁰ 5s¹"], [48,"Cd","鎘",112.41,"transition","d",0,"[Kr] 4d¹⁰ 5s²"],
+    [49,"In","銦",114.82,"post-transition","p",0,"[Kr] 4d¹⁰ 5s² 5p¹"], [50,"Sn","錫",118.71,"post-transition","p",0,"[Kr] 4d¹⁰ 5s² 5p²"],
+    [51,"Sb","銻",121.76,"metalloid","p",0,"[Kr] 4d¹⁰ 5s² 5p³"], [52,"Te","碲",127.60,"metalloid","p",0,"[Kr] 4d¹⁰ 5s² 5p⁴"],
+    [53,"I","碘",126.90,"halogen","p",0,"[Kr] 4d¹⁰ 5s² 5p⁵"], [54,"Xe","氙",131.29,"noble-gas","p",2,"[Kr] 4d¹⁰ 5s² 5p⁶"],
+    [55,"Cs","銫",132.91,"alkali","s",0,"[Xe] 6s¹"], [56,"Ba","鋇",137.33,"alkaline","s",0,"[Xe] 6s²"],
+    [57,"La","鑭",138.91,"lanthanide","d",0,"[Xe] 5d¹ 6s²"], [58,"Ce","鈰",140.12,"lanthanide","f",0,"[Xe] 4f¹ 5d¹ 6s²"],
+    [59,"Pr","鐠",140.91,"lanthanide","f",0,"[Xe] 4f³ 6s²"], [60,"Nd","釹",144.24,"lanthanide","f",0,"[Xe] 4f⁴ 6s²"],
+    [61,"Pm","鉕",145,"lanthanide","f",0,"[Xe] 4f⁵ 6s²"], [62,"Sm","釤",150.36,"lanthanide","f",0,"[Xe] 4f⁶ 6s²"],
+    [63,"Eu","銪",151.96,"lanthanide","f",0,"[Xe] 4f⁷ 6s²"], [64,"Gd","釓",157.25,"lanthanide","f",0,"[Xe] 4f⁷ 5d¹ 6s²"],
+    [65,"Tb","鋱",158.93,"lanthanide","f",0,"[Xe] 4f⁹ 6s²"], [66,"Dy","鏑",162.50,"lanthanide","f",0,"[Xe] 4f¹⁰ 6s²"],
+    [67,"Ho","鈥",164.93,"lanthanide","f",0,"[Xe] 4f¹¹ 6s²"], [68,"Er","鉺",167.26,"lanthanide","f",0,"[Xe] 4f¹² 6s²"],
+    [69,"Tm","銩",168.93,"lanthanide","f",0,"[Xe] 4f¹³ 6s²"], [70,"Yb","鐿",173.05,"lanthanide","f",0,"[Xe] 4f¹⁴ 6s²"],
+    [71,"Lu","鎦",174.97,"lanthanide","d",0,"[Xe] 4f¹⁴ 5d¹ 6s²"],
+    [72,"Hf","鉿",178.49,"transition","d",0,"[Xe] 4f¹⁴ 5d² 6s²"], [73,"Ta","鉭",180.95,"transition","d",0,"[Xe] 4f¹⁴ 5d³ 6s²"],
+    [74,"W","鎢",183.84,"transition","d",0,"[Xe] 4f¹⁴ 5d⁴ 6s²"], [75,"Re","錸",186.21,"transition","d",0,"[Xe] 4f¹⁴ 5d⁵ 6s²"],
+    [76,"Os","鋨",190.23,"transition","d",0,"[Xe] 4f¹⁴ 5d⁶ 6s²"], [77,"Ir","銥",192.22,"transition","d",0,"[Xe] 4f¹⁴ 5d⁷ 6s²"],
+    [78,"Pt","鉑",195.08,"transition","d",0,"[Xe] 4f¹⁴ 5d⁹ 6s¹"], [79,"Au","金",196.97,"transition","d",0,"[Xe] 4f¹⁴ 5d¹⁰ 6s¹"],
+    [80,"Hg","汞",200.59,"transition","d",1,"[Xe] 4f¹⁴ 5d¹⁰ 6s²"], [81,"Tl","鉈",204.38,"post-transition","p",0,"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p¹"],
+    [82,"Pb","鉛",207.2,"post-transition","p",0,"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p²"], [83,"Bi","鉍",208.98,"post-transition","p",0,"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p³"],
+    [84,"Po","釙",209,"metalloid","p",0,"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁴"], [85,"At","砈",210,"halogen","p",0,"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁵"],
+    [86,"Rn","氡",222,"noble-gas","p",2,"[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁶"],
+    [87,"Fr","法",223,"alkali","s",0,"[Rn] 7s¹"], [88,"Ra","鐳",226,"alkaline","s",0,"[Rn] 7s²"],
+    [89,"Ac","錒",227,"actinide","d",0,"[Rn] 6d¹ 7s²"], [90,"Th","釷",232.04,"actinide","f",0,"[Rn] 6d² 7s²"],
+    [91,"Pa","鏷",231.04,"actinide","f",0,"[Rn] 5f² 6d¹ 7s²"], [92,"U","鈾",238.03,"actinide","f",0,"[Rn] 5f³ 6d¹ 7s²"],
+    [93,"Np","錼",237,"actinide","f",0,"[Rn] 5f⁴ 6d¹ 7s²"], [94,"Pu","鈽",244,"actinide","f",0,"[Rn] 5f⁶ 7s²"],
+    [95,"Am","鋂",243,"actinide","f",0,"[Rn] 5f⁷ 7s²"], [96,"Cm","鋦",247,"actinide","f",0,"[Rn] 5f⁷ 6d¹ 7s²"],
+    [97,"Bk","鉳",247,"actinide","f",0,"[Rn] 5f⁹ 7s²"], [98,"Cf","鉲",251,"actinide","f",0,"[Rn] 5f¹⁰ 7s²"],
+    [99,"Es","鑀",252,"actinide","f",0,"[Rn] 5f¹¹ 7s²"], [100,"Fm","鐨",257,"actinide","f",0,"[Rn] 5f¹² 7s²"],
+    [101,"Md","鍆",258,"actinide","f",0,"[Rn] 5f¹³ 7s²"], [102,"No","鍩",259,"actinide","f",0,"[Rn] 5f¹⁴ 7s²"],
+    [103,"Lr","鐒",262,"actinide","d",0,"[Rn] 5f¹⁴ 7p¹"],
+    [104,"Rf","鑪",267,"transition","d",0,"[Rn] 5f¹⁴ 6d² 7s²"], [105,"Db","𨧀",268,"transition","d",0,"[Rn] 5f¹⁴ 6d³ 7s²"],
+    [106,"Sg","𨭎",271,"transition","d",0,"[Rn] 5f¹⁴ 6d⁴ 7s²"], [107,"Bh","𨨏",272,"transition","d",0,"[Rn] 5f¹⁴ 6d⁵ 7s²"],
+    [108,"Hs","𨭆",270,"transition","d",0,"[Rn] 5f¹⁴ 6d⁶ 7s²"], [109,"Mt","䥑",276,"transition","d",0,"[Rn] 5f¹⁴ 6d⁷ 7s²"],
+    [110,"Ds","鐽",281,"transition","d",0,"[Rn] 5f¹⁴ 6d⁹ 7s¹"], [111,"Rg","錀",280,"transition","d",0,"[Rn] 5f¹⁴ 6d¹⁰ 7s¹"],
+    [112,"Cn","鎶",285,"transition","d",0,"[Rn] 5f¹⁴ 6d¹⁰ 7s²"], [113,"Nh","鉨",284,"post-transition","p",0,"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p¹"],
+    [114,"Fl","鈇",289,"post-transition","p",0,"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p²"], [115,"Mc","鏌",288,"post-transition","p",0,"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p³"],
+    [116,"Lv","鉝",293,"post-transition","p",0,"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁴"], [117,"Ts","鿬",294,"halogen","p",0,"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁵"],
+    [118,"Og","奧",294,"noble-gas","p",2,"[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶"],
+];
+
+export interface ElementData {
+    z: number;
+    symbol: string;
+    name: string;
+    mass: number;
+    cat: string;
+    block: string;
+    phase: number;
+    config: string;
+    row: number;
+    col: number;
+}
+
+export const getElements = (): ElementData[] => {
+    return elementRawData.map((e) => {
+        const z = e[0] as number;
+        let col = 0, row = 0;
+        if (z === 1) { row = 1; col = 1; } else if (z === 2) { row = 1; col = 18; }
+        else if (z === 3) { row = 2; col = 1; } else if (z === 4) { row = 2; col = 2; }
+        else if (z >= 5 && z <= 10) { row = 2; col = z + 8; } 
+        else if (z === 11) { row = 3; col = 1; } else if (z === 12) { row = 3; col = 2; }
+        else if (z >= 13 && z <= 18) { row = 3; col = z; }
+        else if (z >= 19 && z <= 36) { row = 4; col = z - 18; }
+        else if (z >= 37 && z <= 54) { row = 5; col = z - 36; }
+        else if (z === 55) { row = 6; col = 1; } else if (z === 56) { row = 6; col = 2; }
+        else if (z >= 72 && z <= 86) { row = 6; col = z - 72 + 4; } 
+        else if (z === 87) { row = 7; col = 1; } else if (z === 88) { row = 7; col = 2; }
+        else if (z >= 104 && z <= 118) { row = 7; col = z - 104 + 4; } 
+        if(z >= 57 && z <= 71) { row = 9; col = z - 57 + 3; }
+        if(z >= 89 && z <= 103) { row = 10; col = z - 89 + 3; }
+        return { 
+            z: e[0] as number, 
+            symbol: e[1] as string, 
+            name: e[2] as string, 
+            mass: e[3] as number, 
+            cat: e[4] as string, 
+            block: e[5] as string, 
+            phase: e[6] as number, 
+            config: e[7] as string, 
+            row: row, 
+            col: col 
+        };
+    });
+};
+
+
+/* ==========================================
+   src/constants.ts 
+   ========================================== */
+
+export const CATEGORIES: Record<string, { hex: string; rgb: string; label: string; desc: string }> = {
+    "alkali": { hex: "#ff1a53", rgb: "255, 26, 83", label: "鹼金屬", desc: "活潑好動，碰到水就會興奮地反應。" },
+    "alkaline": { hex: "#ff8c00", rgb: "255, 140, 0", label: "鹼土金屬", desc: "性格穩重，在煙火中展現光芒。" },
+    "transition": { hex: "#00d4ff", rgb: "0, 212, 255", label: "過渡金屬", desc: "多才多藝，離子顏色豐富。" },
+    "post-transition": { hex: "#4da6ff", rgb: "77, 166, 255", label: "貧金屬", desc: "柔軟而低調，介於金屬與非金屬之間。" },
+    "metalloid": { hex: "#00e5ff", rgb: "0, 229, 255", label: "類金屬", desc: "半導體菁英，雙重性格。" },
+    "nonmetal": { hex: "#1a53ff", rgb: "26, 83, 255", label: "非金屬", desc: "生命基石，形態多變。" },
+    "halogen": { hex: "#00ff2a", rgb: "0, 255, 42", label: "鹵素", desc: "佔有慾強，渴望電子。" },
+    "noble-gas": { hex: "#9d00ff", rgb: "157, 0, 255", label: "鈍氣", desc: "高冷孤傲，不輕易反應。" },
+    "lanthanide": { hex: "#ff007f", rgb: "255, 0, 127", label: "鑭系", desc: "稀土家族，磁性與光學天賦。" },
+    "actinide": { hex: "#d500ff", rgb: "213, 0, 255", label: "錒系", desc: "能量不穩定，神秘放射性。" },
+};
+
+
+/* ==========================================
+   src/components/HomeView.tsx 
+   ========================================== */
+
+import React from 'react';
+
+interface HomeViewProps {
+    onNavigate: (view: string) => void;
+}
+
+export function HomeView({ onNavigate }: HomeViewProps) {
+    const menuItems = [
+        { title: "探索週期表", sub: "全景互動與多重視角切換", icon: "🗺️", view: 'table', color: "border-[#00f0ff]/30 bg-[#00f0ff]/10 hover:bg-[#00f0ff]/20 text-[#00f0ff]" },
+        { title: "3D軌域實驗室", sub: "立體視覺化與子軌域解析", icon: "🌀", view: 'orbitals_gallery', color: "border-[#9933ff]/30 bg-[#9933ff]/10 hover:bg-[#9933ff]/20 text-[#9933ff]" },
+        { title: "元素檢索字典", sub: "完整列表與快速搜尋引擎", icon: "📚", view: 'list', color: "border-[#ff9933]/30 bg-[#ff9933]/10 hover:bg-[#ff9933]/20 text-[#ff9933]" },
+        { title: "化學隨堂測驗", sub: "挑戰辨識元素的互動遊戲", icon: "✍️", view: 'quiz', color: "border-[#33ff66]/30 bg-[#33ff66]/10 hover:bg-[#33ff66]/20 text-[#33ff66]" },
+        { title: "原子堆積實驗室", sub: "晶體結構與空間排列視覺化", icon: "🧊", view: 'stats', color: "border-[#ff3366]/30 bg-[#ff3366]/10 hover:bg-[#ff3366]/20 text-[#ff3366]" },
+        { title: "命運抽卡機", sub: "盲盒抽取今日專屬元素", icon: "🎁", view: 'gacha', color: "border-[#ffcc00]/30 bg-[#ffcc00]/10 hover:bg-[#ffcc00]/20 text-[#ffcc00]" },
+    ];
+
+    return (
+        <div className="flex-1 w-full flex flex-col items-center justify-center p-4 md:p-8 relative overflow-hidden">
+            <div className="scanlines"></div>
+            <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #00f0ff 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+            <div className="text-center mb-12 relative z-10">
+                <h1 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-widest glowing-text uppercase">
+                    恆河水之元素週期表
+                </h1>
+                <p className="text-[#00f0ff] font-mono text-sm md:text-base opacity-80 tracking-[0.2em]">
+                    互動式數據與化學探索器
+                </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 w-full max-w-5xl px-2 relative z-10">
+                {menuItems.map((item, idx) => (
+                    <button key={idx} onClick={() => onNavigate(item.view)} className={`group relative overflow-hidden rounded-2xl p-6 glass-panel text-left transition-all duration-300 hover:scale-105 border ${item.color} hover:shadow-[0_0_20px_rgba(0,240,255,0.3)]`}>
+                        <div className="flex flex-col gap-4">
+                            <div className="text-4xl group-hover:scale-110 transition-transform filter drop-shadow-[0_0_8px_rgba(255,255,255,0.5)]">{item.icon}</div>
+                            <div>
+                                <h3 className="text-xl font-bold tracking-wide text-white">{item.title}</h3>
+                                <p className="text-xs text-white/70 mt-2 font-mono opacity-80">{item.sub}</p>
+                            </div>
+                        </div>
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+
+/* ==========================================
+   src/components/TableView.tsx 
+   ========================================== */
+
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import * as THREE from 'three';
+import * as TWEEN from '@tweenjs/tween.js';
+import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls.js';
+import { CSS3DRenderer, CSS3DObject } from 'three/examples/jsm/renderers/CSS3DRenderer.js';
+
+import { ElementData } from '../data';
+import { CATEGORIES } from '../constants';
+
+interface TableViewProps {
+    elements: ElementData[];
+    tableMode: string;
+    setTableMode: (mode: string) => void;
+    searchTerm: string;
+    setSearchTerm: (term: string) => void;
+    phaseFilter: string | number;
+    setPhaseFilter: (filter: string | number) => void;
+    onSelectElement: (el: ElementData) => void;
+    onSelectOrbital: (orb: string) => void;
+    onBack: () => void;
+}
+
+export const TableView: React.FC<TableViewProps> = ({
+    elements,
+    tableMode,
+    setTableMode,
+    searchTerm,
+    setSearchTerm,
+    phaseFilter,
+    setPhaseFilter,
+    onSelectElement,
+    onSelectOrbital,
+    onBack
+}) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    
+    const objectsRef = useRef<CSS3DObject[]>([]);
+    const targetsRef = useRef<Record<string, THREE.Object3D[]>>({ table: [], sphere: [], helix: [], grid: [] });
+    const renderRef = useRef<() => void>();
+    const transformFnRef = useRef<((layout: string, duration: number) => void) | null>(null);
+    const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+    const controlsRef = useRef<TrackballControls | null>(null);
+
+    const [currentLayout, setCurrentLayout] = useState('table');
+    const [hasError, setHasError] = useState<string | null>(null);
+
+    // Dynamic Updates for Classes (Color & Opacity)
+    useEffect(() => {
+        try {
+            if (objectsRef.current.length === 0) return;
+            elements.forEach((el, i) => {
+                const matchesSearch = !searchTerm || el.name.includes(searchTerm) || el.symbol.toLowerCase().includes(searchTerm.toLowerCase()) || el.z.toString() === searchTerm;
+                const matchesPhase = phaseFilter === 'all' || el.phase === phaseFilter;
+                const isDimmed = !matchesSearch || !matchesPhase;
+                
+                let catHex = CATEGORIES[el.category] || CATEGORIES[el.cat]?.hex || '#3366ff';
+                if (tableMode === 'config') {
+                    const colors: Record<string, {hex: string, rgb: string}> = {
+                        s: { hex: '#ff1a53', rgb: '255, 26, 83' },
+                        p: { hex: '#ff8c00', rgb: '255, 140, 0' },
+                        d: { hex: '#00d4ff', rgb: '0, 212, 255' },
+                        f: { hex: '#00ff2a', rgb: '0, 255, 42' }
+                    };
+                    catHex = colors[el.block]?.hex || catHex;
+                } else if (tableMode === 'phase') {
+                    const colors: Record<number, {hex: string, rgb: string}> = {
+                        0: { hex: '#d6d3d1', rgb: '214, 211, 209' },
+                        1: { hex: '#60a5fa', rgb: '96, 165, 250' },
+                        2: { hex: '#4ade80', rgb: '74, 222, 128' }
+                    };
+                    catHex = colors[el.phase]?.hex || catHex;
+                }
+
+                const cssObj = objectsRef.current[i];
+                if (cssObj && cssObj.element) {
+                    const elNode = cssObj.element as HTMLDivElement;
+                    elNode.style.opacity = isDimmed ? '0.15' : '1';
+                    elNode.style.filter = isDimmed ? 'grayscale(100%)' : 'none';
+                    elNode.style.backgroundColor = isDimmed ? 'rgba(0,0,0,0.5)' : `${catHex}40`;
+                    elNode.style.borderColor = isDimmed ? 'rgba(255,255,255,0.1)' : `${catHex}cc`;
+                    elNode.style.boxShadow = isDimmed ? 'none' : `0 0 12px ${catHex}80`;
+                    
+                    // Specific inner element updates
+                    const symbolEl = elNode.querySelector('.symbol') as HTMLElement;
+                    if(symbolEl) symbolEl.style.color = isDimmed ? 'rgba(255,255,255,0.3)' : '#ffffff';
+                }
+            });
+            if (renderRef.current) renderRef.current();
+        } catch(e) {
+            console.error(e);
+        }
+    }, [searchTerm, tableMode, phaseFilter, elements]);
+
+    useEffect(() => {
+        console.log("=== Scene useEffect MOUNTING ===");
+        try {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const width = container.clientWidth || window.innerWidth;
+        const height = container.clientHeight || window.innerHeight;
+        const aspect = width / height;
+
+        const fov = 40;
+        const verticalFovRad = fov * (Math.PI / 180);
+        // Table size limits
+        const requiredZHorizontal = 2400 / (2 * Math.tan(verticalFovRad / 2) * aspect);
+        const requiredZVertical = 1800 / (2 * Math.tan(verticalFovRad / 2));
+        const cameraZ = Math.max(requiredZHorizontal, requiredZVertical) * 1.05; 
+        
+        const camera = new THREE.PerspectiveCamera( fov, aspect, 1, 15000 );
+        camera.position.z = cameraZ;
+        cameraRef.current = camera;
+
+        const scene = new THREE.Scene();
+
+        const objects: CSS3DObject[] = [];
+        const targets: Record<string, THREE.Object3D[]> = { table: [], sphere: [], helix: [], grid: [] };
+        
+        objectsRef.current = objects;
+        targetsRef.current = targets;
+
+        elements.forEach((el, i) => {
+            // Create pure HTML element!
+            const elementNode = document.createElement('div');
+            elementNode.className = 'element-card group pointer-events-auto'; // Need pointer-events-auto inside the canvas
+            elementNode.style.width = '120px';
+            elementNode.style.height = '160px';
+            elementNode.style.backgroundColor = 'rgba(0,127,127,0.5)';
+            elementNode.style.border = '1px solid rgba(127,255,255,0.25)';
+            elementNode.style.boxShadow = '0 0 12px rgba(0,255,255,0.5)';
+            elementNode.style.textAlign = 'center';
+            elementNode.style.cursor = 'pointer';
+            elementNode.style.boxSizing = 'border-box';
+            elementNode.style.position = 'absolute';
+            elementNode.style.transition = 'none'; // TweenJS handles animation
+            
+            // Mouse interactions
+            elementNode.addEventListener('pointerdown', (e) => {
+                e.stopPropagation(); // prevent controls from taking it immediately 
+                onSelectElement(el);
+            });
+            
+            const numberNode = document.createElement('div');
+            numberNode.className = 'number';
+            numberNode.textContent = el.z.toString();
+            numberNode.style.position = 'absolute';
+            numberNode.style.top = '6px';
+            numberNode.style.left = '6px';
+            numberNode.style.fontSize = '14px';
+            numberNode.style.color = 'rgba(255,255,255,0.8)';
+            numberNode.style.fontFamily = 'monospace';
+            elementNode.appendChild(numberNode);
+
+            const symbolNode = document.createElement('div');
+            symbolNode.className = 'symbol';
+            symbolNode.textContent = el.symbol;
+            symbolNode.style.position = 'absolute';
+            symbolNode.style.top = '50%';
+            symbolNode.style.left = '50%';
+            symbolNode.style.transform = 'translate(-50%, -50%)';
+            symbolNode.style.fontWeight = 'bold';
+            symbolNode.style.color = '#ffffff';
+            symbolNode.style.fontSize = '50px';
+            symbolNode.style.fontFamily = 'sans-serif';
+            elementNode.appendChild(symbolNode);
+
+            const detailsNode = document.createElement('div');
+            detailsNode.className = 'details';
+            detailsNode.textContent = el.name + '\n' + el.mass;
+            detailsNode.style.position = 'absolute';
+            detailsNode.style.bottom = '8px';
+            detailsNode.style.left = '0';
+            detailsNode.style.right = '0';
+            detailsNode.style.fontSize = '12px';
+            detailsNode.style.color = 'rgba(255,255,255,0.7)';
+            detailsNode.style.whiteSpace = 'pre-wrap';
+            elementNode.appendChild(detailsNode);
+
+            const objectCSS = new CSS3DObject(elementNode);
+            // Initialize userData for the animation engine
+            (objectCSS as any).userData = { 
+                isAnimating: false,
+                targetPosition: new THREE.Vector3(),
+                targetQuaternion: new THREE.Quaternion(),
+                delayFrames: 0
+            };
+            
+            // Table layout calculation
+            const targetTable = new THREE.Object3D();
+            targetTable.position.x = ( el.col * 140 ) - 1330;
+            targetTable.position.y = - ( el.row * 180 ) + 990;
+            targets.table.push( targetTable );
+
+            // Start neatly organized as the table
+            objectCSS.position.copy(targetTable.position);
+            objectCSS.quaternion.copy(targetTable.quaternion);
+            scene.add( objectCSS );
+            objects.push( objectCSS );
+
+            // Sphere layout calculation
+            const targetSphere = new THREE.Object3D();
+            const l = elements.length;
+            const phi = Math.acos( - 1 + ( 2 * i ) / l );
+            const theta = Math.sqrt( l * Math.PI ) * phi;
+            targetSphere.position.setFromSphericalCoords( 800, phi, theta );
+            const vector = new THREE.Vector3().copy( targetSphere.position ).multiplyScalar( 2 ); 
+            targetSphere.lookAt( vector );
+            targets.sphere.push( targetSphere );
+
+            // Helix layout calculation
+            const targetHelix = new THREE.Object3D();
+            const hTheta = i * 0.175 + Math.PI;
+            const y = - ( i * 8 ) + 450;
+            targetHelix.position.setFromCylindricalCoords( 900, hTheta, y );
+            const vector2 = new THREE.Vector3(); 
+            vector2.x = targetHelix.position.x * 2; 
+            vector2.y = targetHelix.position.y; 
+            vector2.z = targetHelix.position.z * 2; 
+            targetHelix.lookAt( vector2 );
+            targets.helix.push( targetHelix );
+
+            // Grid layout calculation
+            const targetGrid = new THREE.Object3D();
+            targetGrid.position.x = ( ( i % 5 ) * 400 ) - 800;
+            targetGrid.position.y = ( - ( Math.floor( i / 5 ) % 5 ) * 400 ) + 800;
+            targetGrid.position.z = ( Math.floor( i / 25 ) ) * 1000 - 2000;
+            targets.grid.push( targetGrid );
+        });
+
+        const renderer = new CSS3DRenderer();
+        renderer.setSize( width, height );
+        renderer.domElement.style.position = 'absolute';
+        renderer.domElement.style.top = '0';
+        container.appendChild( renderer.domElement );
+
+        const controls = new TrackballControls( camera, renderer.domElement );
+        controls.minDistance = 500;
+        controls.maxDistance = 6000;
+        controlsRef.current = controls;
+
+        const renderCall = () => {
+            renderer.render( scene, camera );
+        };
+
+        controls.addEventListener( 'change', renderCall );
+
+        renderRef.current = renderCall;
+
+        transformFnRef.current = ( layout: string, duration: number ) => {
+            try {
+                const layoutTargets = targetsRef.current[layout];
+                if (!layoutTargets) {
+                    console.warn("Layout targets not found for:", layout);
+                    return;
+                }
+                setCurrentLayout(layout);
+
+                for ( let i = 0; i < objectsRef.current.length; i ++ ) {
+                    const object = objectsRef.current[ i ];
+                    const target = layoutTargets[ i ];
+                    
+                    // Use Quaternion for rotation to avoid euler flip issues
+                    (object as any).userData.targetPosition = target.position.clone();
+                    (object as any).userData.targetQuaternion = target.quaternion.clone();
+                    (object as any).userData.isAnimating = true;
+                    // Smaller delay for snappier start
+                    (object as any).userData.delayFrames = Math.floor(Math.random() * 10);
+                }
+                
+                // Reset camera target for clarity
+                if (controlsRef.current) {
+                    controlsRef.current.target.set(0, 0, 0);
+                    controlsRef.current.update();
+                }
+                    
+                console.log(`Manual transition to ${layout} started!`);
+            } catch(e) {
+                console.error("Layout change error", e);
+                setHasError(String(e));
+            }
+        };
+
+        let animationId: number;
+        const animate = () => {
+            animationId = requestAnimationFrame( animate );
+            
+            let needsRender = false;
+            for (let i = 0; i < objectsRef.current.length; i++) {
+                const object = objectsRef.current[i];
+                const userData = (object as any).userData;
+                
+                if (userData && userData.isAnimating) {
+                    if (userData.delayFrames > 0) {
+                        userData.delayFrames--;
+                        continue;
+                    }
+                    
+                    const tPos = userData.targetPosition;
+                    const tQuat = userData.targetQuaternion;
+                    
+                    // Slerp and Lerp
+                    object.position.lerp(tPos, 0.1);
+                    object.quaternion.slerp(tQuat, 0.1);
+                    
+                    if (object.position.distanceToSquared(tPos) < 0.1) {
+                        object.position.copy(tPos);
+                        object.quaternion.copy(tQuat);
+                        userData.isAnimating = false;
+                    }
+                    needsRender = true;
+                }
+            }
+            
+            controls.update();
+            renderCall();
+        };
+        animate();
+
+        // Add ResizeObserver for robust sizing
+        const resizeObserver = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                const { width, height } = entry.contentRect;
+                if (width > 0 && height > 0) {
+                    camera.aspect = width / height;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(width, height);
+                    renderCall();
+                }
+            }
+        });
+        resizeObserver.observe(container);
+
+        // Run dependency updates right after init to apply current mode styles
+        const triggerUpdate = () => {
+            setPhaseFilter((prev) => prev);
+        };
+        setTimeout(triggerUpdate, 50);
+
+        return () => {
+            resizeObserver.disconnect();
+            cancelAnimationFrame(animationId);
+            
+            if (containerRef.current && renderer.domElement.parentNode === containerRef.current) {
+                containerRef.current.removeChild( renderer.domElement );
+            }
+            
+            // CSS3DRenderer doesn't have .dispose(), scene.clear() is enough for basic object cleanup
+            scene.clear();
+        };
+        } catch(e) {
+            console.error(e);
+            setHasError(String(e));
+        }
+    }, [elements]);
+
+    const handleLayoutChange = (layout: string) => {
+        console.log("Layout change requested:", layout);
+        if (transformFnRef.current) {
+            transformFnRef.current(layout, 2000);
+        }
+    };
+
+    if (hasError) {
+        return <div className="text-red-500 bg-black z-50 absolute inset-0 flex items-center justify-center p-4">
+            <div className="bg-white/10 p-4 rounded-xl border border-red-500 max-w-full overflow-auto">
+                <h2 className="text-xl font-bold mb-2">Runtime Error</h2>
+                <pre className="text-xs whitespace-pre-wrap">{hasError}</pre>
+                <button onClick={() => setHasError(null)} className="mt-4 px-4 py-2 bg-red-500 text-white rounded">Dismiss</button>
+            </div>
+        </div>;
+    }
+
+    return (
+        <div className="flex-1 w-full flex flex-col relative overflow-hidden bg-transparent">
+            {/* 3D Container Behind UI */}
+            <div ref={containerRef} className="absolute inset-0 z-0" style={{zIndex: 10, pointerEvents: 'auto'}}></div>
+
+            <div className="scanlines pointer-events-none z-50"></div>
+            
+            {/* Top Toolbar */}
+            <div className="absolute top-0 w-full z-40 flex flex-col pointer-events-none">
+                <div className="glass-panel px-4 py-3 flex items-center justify-between gap-4 border-b border-white/10 shadow-lg pointer-events-auto">
+                    <button onClick={onBack} className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-[#00f0ff] font-bold hover:bg-white/10 transition-colors shadow-sm text-sm shrink-0 font-mono pointer-events-auto">⬅ 回首頁</button>
+                    <input type="text" placeholder="搜尋元素..." className="px-4 py-2 rounded-lg border border-white/20 bg-black/30 focus:outline-none focus:border-[#00f0ff] text-white text-sm w-full max-w-[200px] shadow-sm hidden md:block font-mono placeholder-white/30 pointer-events-auto" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                </div>
+
+                {/* Filter / Orbital toolbar */}
+                <div className="glass-panel md:px-4 px-2 py-2 w-full border-b border-white/10 shadow-sm pointer-events-none flex justify-center">
+                    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 max-w-[1400px]">
+                        <select value={tableMode} onChange={(e) => setTableMode(e.target.value)} className="pointer-events-auto bg-[#0a2540] border border-[#00f0ff]/30 text-[#00f0ff] px-2 py-1.5 rounded-md text-xs sm:text-sm outline-none shadow-[0_0_10px_rgba(0,240,255,0.1)] cursor-pointer font-mono h-auto">
+                            <option value="basic">🧪 基礎視角</option>
+                            <option value="config">⚛️ 軌域視角 (s/p/d/f)</option>
+                            <option value="phase">🌡️ 狀態視角 (固/液/氣)</option>
+                        </select>
+                        <div className="flex items-center gap-2 pointer-events-auto">
+                            <div className="flex bg-black/30 p-1 rounded-md border border-white/10">
+                                {['all', 0, 1, 2].map(p => (
+                                    <button key={p} onClick={() => setPhaseFilter(p)} className={`px-2 py-1 text-[10px] sm:text-xs font-mono rounded transition-all ${phaseFilter===p?'bg-white/20 text-white':'text-white/50 hover:bg-white/10'}`}>{p==='all'?'全':p===0?'固':p===1?'液':'氣'}</button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 pointer-events-auto bg-black/30 px-2 py-1 rounded-md border border-white/10">
+                            {['s', 'p', 'd', 'f'].map(orb => (
+                                <button key={orb} onClick={() => onSelectOrbital(orb)} className={`flex items-center justify-center w-6 h-6 rounded border shadow-sm transition-all hover:scale-110 bg-black/30 font-mono font-bold text-xs ${orb==='s'?'text-red-400 border-red-500/50':orb==='p'?'text-amber-400 border-amber-500/50':orb==='d'?'text-blue-400 border-blue-500/50':'text-green-400 border-green-500/50'}`}>{orb.toUpperCase()}</button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Bottom Controls Toolbar */}
+            <div className="absolute bottom-4 w-full z-50 flex flex-col items-center pointer-events-none px-2 gap-2">
+                
+                {/* View Controls */}
+                <div className="flex items-center gap-1 sm:gap-2 bg-black/80 backdrop-blur-md p-1.5 rounded-xl border border-white/30 shadow-[0_0_20px_rgba(0,240,255,0.2)]" style={{ pointerEvents: 'auto' }}>
+                    {[
+                        { id: 'table', label: '正常平面' },
+                        { id: 'sphere', label: '變化：球體' },
+                        { id: 'helix', label: '變化：螺旋' },
+                        { id: 'grid', label: '變化：網格' },
+                    ].map(l => (
+                        <button 
+                            key={l.id} 
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleLayoutChange(l.id); }} 
+                            className={`px-3 sm:px-4 py-2 text-[10px] sm:text-xs font-mono font-bold rounded-lg transition-all ${currentLayout===l.id?'bg-[#00f0ff] text-black shadow-[0_0_10px_#00f0ff]':'text-[#00f0ff] hover:bg-[#00f0ff]/20'}`}
+                            style={{ cursor: 'pointer' }}
+                        >
+                            {l.label}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="text-white/30 text-[10px] sm:text-xs font-mono tracking-widest bg-black/50 px-4 py-1.5 rounded-full border border-white/10 transition-all pointer-events-none">
+                    DRAG TO ROTATE • SCROLL TO ZOOM
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+/* ==========================================
+   src/components/QuizView.tsx 
+   ========================================== */
+
+import React, { useState, useEffect } from 'react';
+import { ElementData } from '../data';
+import { CATEGORIES } from '../constants';
+
+interface QuizViewProps {
+    elements: ElementData[];
+    onBack: () => void;
+}
+
+const COMMON_Z = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 25, 26, 27, 28, 29, 30, 35, 47, 50, 53, 56, 74, 78, 79, 80, 82, 92];
+
+export function QuizView({ elements, onBack }: QuizViewProps) {
+    const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+    const [numQuestions, setNumQuestions] = useState<number>(10);
+    const [selectedType, setSelectedType] = useState<string>('mixed');
+    const [quizState, setQuizState] = useState<{ step: string, score: number, qIndex: number, currentQ: any, totalQ: number }>({ 
+        step: 'start', score: 0, qIndex: 0, currentQ: null, totalQ: 10
+    });
+
+    const nextQuestion = (currentScore: number, qIndex: number, totalQ: number) => {
+        if (qIndex >= totalQ) { 
+            setQuizState(prev => ({ ...prev, step: 'end', score: currentScore, qIndex, currentQ: null })); 
+            return; 
+        }
+        
+        const QUESTION_TYPES = ['symbol_to_name', 'name_to_symbol', 'z_to_name', 'name_to_z', 'element_to_category'];
+        const qType = selectedType === 'mixed' 
+            ? QUESTION_TYPES[Math.floor(Math.random() * QUESTION_TYPES.length)]
+            : selectedType;
+
+        // Difficulty sets element pool
+        let pool = elements;
+        if (difficulty === 'easy') {
+            pool = elements.filter(e => COMMON_Z.includes(e.z));
+        } else if (difficulty === 'medium') {
+            pool = elements.filter(e => e.z <= 83); // Stable elements up to Bismuth
+        }
+
+        const target = pool[Math.floor(Math.random() * pool.length)]; 
+        
+        let options: any[] = [];
+        let questionText = "";
+        let questionMain = "";
+
+        if (qType === 'symbol_to_name') {
+            questionText = "請問下列元素的中文名稱是？";
+            questionMain = target.symbol;
+            options = [target];
+            while(options.length < 4) {
+                const r = pool[Math.floor(Math.random() * pool.length)];
+                if(!options.find(o => o.z === r.z)) options.push(r);
+            }
+        } else if (qType === 'name_to_symbol') {
+            questionText = "請問下列元素的化學符號是？";
+            questionMain = target.name;
+            options = [target];
+            while(options.length < 4) {
+                const r = pool[Math.floor(Math.random() * pool.length)];
+                if(!options.find(o => o.z === r.z)) options.push(r);
+            }
+        } else if (qType === 'z_to_name') {
+            questionText = "請問原子序為下列數字的元素是？";
+            questionMain = target.z.toString();
+            options = [target];
+            while(options.length < 4) {
+                const r = pool[Math.floor(Math.random() * pool.length)];
+                if(!options.find(o => o.z === r.z)) options.push(r);
+            }
+        } else if (qType === 'name_to_z') {
+            questionText = `請問 ${target.name} (${target.symbol}) 的原子序是？`;
+            questionMain = target.name;
+            options = [target];
+            while(options.length < 4) {
+                const r = pool[Math.floor(Math.random() * pool.length)];
+                if(!options.find(o => o.z === r.z)) options.push(r);
+            }
+        } else if (qType === 'element_to_category') {
+            questionText = `請問 ${target.name} (${target.symbol}) 屬於哪個元素類別？`;
+            questionMain = target.name;
+            const allCats = Object.keys(CATEGORIES);
+            options = [target.cat];
+            while(options.length < 4) {
+                const rCat = allCats[Math.floor(Math.random() * allCats.length)];
+                if(!options.includes(rCat)) options.push(rCat);
+            }
+        }
+
+        options.sort(() => Math.random() - 0.5);
+
+        setQuizState({ 
+            step: 'playing', 
+            score: currentScore, 
+            qIndex, 
+            totalQ,
+            currentQ: { type: qType, target, options, questionText, questionMain, answered: null, correct: null } 
+        });
+    };
+
+    const startQuiz = () => { 
+        nextQuestion(0, 0, numQuestions); 
+    };
+
+    const handleAnswer = (selectedOpt: any) => {
+        if (quizState.currentQ.answered) return;
+        
+        let isCorrect = false;
+        if (quizState.currentQ.type === 'element_to_category') {
+            isCorrect = selectedOpt === quizState.currentQ.target.cat;
+        } else {
+            isCorrect = selectedOpt.z === quizState.currentQ.target.z;
+        }
+        
+        setQuizState(prev => ({ ...prev, currentQ: { ...prev.currentQ, answered: selectedOpt, correct: isCorrect } }));
+        setTimeout(() => { nextQuestion(quizState.score + (isCorrect ? 10 : 0), quizState.qIndex + 1, quizState.totalQ); }, 1500);
+    };
+
+    return (
+        <div className="flex-1 w-full flex flex-col items-center justify-center p-4 md:p-8 overflow-auto relative">
+            <div className="scanlines"></div>
+            <div className="w-full max-w-xl glass-panel rounded-3xl shadow-[0_0_30px_rgba(0,240,255,0.1)] overflow-hidden border border-[#00f0ff]/30 relative z-10">
+                <button onClick={onBack} className="absolute top-4 left-4 text-[#00f0ff]/70 hover:text-[#00f0ff] font-mono font-bold z-10 transition-colors">⬅ 回首頁</button>
+                
+                {quizState.step === 'start' && (
+                    <div className="p-8 md:p-10 text-center">
+                        <div className="text-6xl mb-4 animate-bounce-slight filter drop-shadow-[0_0_10px_rgba(0,240,255,0.5)]">🎯</div>
+                        <h2 className="text-3xl font-black text-white mb-2 tracking-widest glowing-text uppercase">化學隨堂測驗</h2>
+                        <p className="text-[#00f0ff]/70 mb-8 font-mono text-sm">挑戰你的化學直覺與記憶力</p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left mb-8">
+                            {/* Difficulty Selection */}
+                            <div>
+                                <label className="text-[#00f0ff] font-mono text-xs uppercase tracking-widest mb-3 block">元素範圍</label>
+                                <div className="flex flex-col gap-2">
+                                    {[
+                                        { id: 'easy', label: '生活常用 (常見元素)' },
+                                        { id: 'medium', label: '學術標準 (穩定元素)' },
+                                        { id: 'hard', label: '全域挑戰 (118 元素)' }
+                                    ].map(d => (
+                                        <button key={d.id} onClick={() => setDifficulty(d.id as any)} className={`px-4 py-3 rounded-xl border font-bold text-sm transition-all ${difficulty === d.id ? 'bg-[#00f0ff]/20 border-[#00f0ff] text-[#00f0ff] shadow-[0_0_10px_rgba(0,240,255,0.2)]' : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'}`}>
+                                            {d.label}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="mt-4">
+                                    <label className="text-[#00f0ff] font-mono text-xs uppercase tracking-widest mb-3 block">測驗題數</label>
+                                    <div className="flex gap-2">
+                                        {[5, 10, 20].map(n => (
+                                            <button key={n} onClick={() => setNumQuestions(n)} className={`flex-1 py-2 rounded-lg border font-mono text-xs font-bold transition-all ${numQuestions === n ? 'bg-[#00f0ff]/20 border-[#00f0ff] text-[#00f0ff]' : 'bg-white/5 border-white/10 text-white/40 hover:bg-white/10'}`}>
+                                                {n} 題
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Type Selection */}
+                            <div>
+                                <label className="text-[#00f0ff] font-mono text-xs uppercase tracking-widest mb-3 block">題目類型</label>
+                                <div className="flex flex-col gap-2">
+                                    {[
+                                        { id: 'mixed', label: '混合模式' },
+                                        { id: 'name_to_symbol', label: '元素名稱 → 符號' },
+                                        { id: 'symbol_to_name', label: '符號 → 元素名稱' },
+                                        { id: 'z_to_name', label: '原子序 → 元素名稱' },
+                                        { id: 'element_to_category', label: '元素屬性判定' }
+                                    ].map(t => (
+                                        <button key={t.id} onClick={() => setSelectedType(t.id)} className={`px-4 py-3 rounded-xl border font-bold text-sm transition-all ${selectedType === t.id ? 'bg-[#00f0ff]/20 border-[#00f0ff] text-[#00f0ff] shadow-[0_0_10px_rgba(0,240,255,0.2)]' : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'}`}>
+                                            {t.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onClick={startQuiz} className="w-full py-5 bg-[#00f0ff]/30 hover:bg-[#00f0ff]/50 border border-[#00f0ff]/50 text-[#00f0ff] rounded-2xl font-black font-mono text-2xl shadow-[0_0_20px_rgba(0,240,255,0.3)] transition-all hover:scale-[1.02] active:scale-95">START QUIZ</button>
+                    </div>
+                )}
+
+                {quizState.step === 'playing' && quizState.currentQ && (
+                    <div className="p-6">
+                        <div className="flex justify-between items-center mb-6 pt-8 text-sm font-mono font-bold text-[#00f0ff]/70">
+                            <span>第 {quizState.qIndex + 1} / {quizState.totalQ} 題</span>
+                            <span>範圍：{difficulty === 'easy' ? '生活' : difficulty === 'medium' ? '標準' : '全域'}</span>
+                            <span>分數：{quizState.score}</span>
+                        </div>
+                        <div className="bg-black/40 rounded-2xl p-8 text-center mb-6 border border-white/10 shadow-inner relative overflow-hidden group">
+                            <div className="absolute top-2 right-2 text-[10px] text-white/20 font-mono tracking-tighter">IDENTIFICATION PROTOCOL v1.0</div>
+                            <p className="text-[#00f0ff]/80 font-mono text-xs mb-3 tracking-widest uppercase">{quizState.currentQ.questionText}</p>
+                            <h3 className={`text-5xl md:text-7xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] transition-transform group-hover:scale-105 ${['symbol_to_name', 'z_to_name'].includes(quizState.currentQ.type) ? 'font-mono' : ''}`}>
+                                {quizState.currentQ.questionMain}
+                            </h3>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {quizState.currentQ.options.map((opt: any, idx: number) => {
+                                let btnClass = "bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-[#00f0ff]/50";
+                                let isOptCorrect = false;
+                                let isOptSelected = false;
+                                
+                                if (quizState.currentQ.type === 'element_to_category') {
+                                    isOptCorrect = opt === quizState.currentQ.target.cat;
+                                    isOptSelected = quizState.currentQ.answered === opt;
+                                } else {
+                                    isOptCorrect = opt.z === quizState.currentQ.target.z;
+                                    isOptSelected = quizState.currentQ.answered && quizState.currentQ.answered.z === opt.z;
+                                }
+
+                                if (quizState.currentQ.answered) {
+                                    if (isOptCorrect) btnClass = "bg-green-500/20 border-green-500 text-green-400 scale-[1.02] shadow-[0_0_15px_rgba(74,222,128,0.3)] z-10";
+                                    else if (isOptSelected) btnClass = "bg-red-500/20 border-red-500 text-red-400 animate-shake shadow-[0_0_15px_rgba(248,113,113,0.3)]";
+                                    else btnClass = "bg-black/20 border-transparent text-white/10 opacity-30 grayscale";
+                                }
+                                
+                                let optText = "";
+                                if (quizState.currentQ.type === 'symbol_to_name') optText = opt.name;
+                                else if (quizState.currentQ.type === 'name_to_symbol') optText = opt.symbol;
+                                else if (quizState.currentQ.type === 'z_to_name') optText = `${opt.symbol} (${opt.name})`;
+                                else if (quizState.currentQ.type === 'name_to_z') optText = opt.z.toString();
+                                else if (quizState.currentQ.type === 'element_to_category') optText = CATEGORIES[opt]?.label || opt;
+
+                                return (
+                                    <button key={idx} onClick={() => handleAnswer(opt)} disabled={!!quizState.currentQ.answered} className={`py-4 rounded-xl font-bold text-lg md:text-xl transition-all shadow-sm ${btnClass} ${['name_to_symbol', 'name_to_z'].includes(quizState.currentQ.type) ? 'font-mono' : ''}`}>
+                                        {optText}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {quizState.step === 'end' && (
+                    <div className="p-10 text-center">
+                        <div className="text-7xl mb-4 filter drop-shadow-[0_0_10px_rgba(0,240,255,0.5)]">
+                            {quizState.score >= quizState.totalQ * 8 ? '🏆' : quizState.score >= quizState.totalQ * 5 ? '👍' : '📚'}
+                        </div>
+                        <h2 className="text-4xl font-black text-white mb-2 tracking-widest glowing-text uppercase">測驗結束！</h2>
+                        <p className="text-[#00f0ff]/70 mb-2 font-mono text-sm uppercase">Total Performance Score</p>
+                        <div className="text-8xl font-black text-[#00f0ff] mb-8 drop-shadow-[0_0_20px_rgba(0,240,255,0.6)]">{quizState.score}</div>
+                        
+                        <div className="flex flex-col gap-3">
+                            <button onClick={startQuiz} className="w-full py-4 bg-[#00f0ff]/20 hover:bg-[#00f0ff]/40 border border-[#00f0ff]/50 text-[#00f0ff] rounded-2xl font-black font-mono text-xl shadow-[0_0_15px_rgba(0,240,255,0.2)] transition-all hover:scale-105 uppercase">Retry Protocol</button>
+                            <button onClick={() => setQuizState(prev => ({ ...prev, step: 'start' }))} className="w-full py-4 text-white/50 hover:text-[#00f0ff] font-bold font-mono text-sm transition-all uppercase tracking-widest underline decoration-white/10 hover:decoration-[#00f0ff]/40">返回設定</button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+
+/* ==========================================
+   src/components/ElementListView.tsx 
+   ========================================== */
+
+import React from 'react';
+import { ElementData } from '../data';
+import { CATEGORIES } from '../constants';
+
+interface ElementListViewProps {
+    elements: ElementData[];
+    searchTerm: string;
+    setSearchTerm: (term: string) => void;
+    onSelectElement: (el: ElementData) => void;
+    onBack: () => void;
+}
+
+export const ElementListView: React.FC<ElementListViewProps> = ({
+    elements,
+    searchTerm,
+    setSearchTerm,
+    onSelectElement,
+    onBack
+}) => {
+    return (
+        <div className="flex-1 w-full flex flex-col p-4 md:p-8 relative">
+            <div className="scanlines"></div>
+            <div className="max-w-3xl mx-auto w-full mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0 relative z-10">
+                <div className="flex items-center gap-4">
+                    <button onClick={onBack} className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-[#00f0ff] font-bold hover:bg-white/10 transition-colors shadow-sm font-mono">⬅ 回首頁</button>
+                    <h2 className="text-xl md:text-2xl font-black text-white tracking-widest glowing-text">元素檢索字典</h2>
+                </div>
+                <input type="text" placeholder="輸入中文名稱或符號..." className="px-4 py-2 rounded-lg border border-white/20 bg-black/30 focus:outline-none focus:border-[#00f0ff] text-white shadow-sm w-full sm:w-64 font-mono placeholder-white/30" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            </div>
+            <div className="flex-1 overflow-auto max-w-3xl mx-auto w-full glass-panel rounded-2xl shadow-sm p-2 custom-scrollbar relative z-10">
+                {elements.filter(el => !searchTerm || el.name.includes(searchTerm) || el.symbol.toLowerCase().includes(searchTerm.toLowerCase()) || el.z.toString() === searchTerm).map(el => (
+                    <div key={el.z} onClick={() => onSelectElement(el)} className="flex items-center p-3 border-b border-white/5 hover:bg-white/5 hover:shadow-[inset_0_0_10px_rgba(0,240,255,0.1)] cursor-pointer transition-all rounded-lg mb-1">
+                        <div className="w-12 text-center font-mono text-[#00f0ff]/70 font-bold">{el.z}</div>
+                        <div className="w-12 h-12 flex items-center justify-center font-bold text-xl rounded-lg shadow-sm mr-4 tech-card shrink-0" style={{ '--cat-color': CATEGORIES[el.cat]?.hex || '#3366ff', '--cat-color-rgb': CATEGORIES[el.cat]?.rgb || '51, 102, 255' } as React.CSSProperties}>{el.symbol}</div>
+                        <div className="flex-1">
+                            <div className="font-bold text-lg text-white">{el.name}</div>
+                            <div className="text-xs text-[#00f0ff]/70 font-mono">{CATEGORIES[el.cat]?.label}</div>
+                        </div>
+                        <div className="hidden sm:block text-right font-mono text-sm text-white/50">{el.mass}</div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+
+/* ==========================================
+   src/components/OrbitalsGalleryView.tsx 
+   ========================================== */
+
+import React from 'react';
+
+interface OrbitalsGalleryViewProps {
+    onSelectOrbital: (orb: string) => void;
+    onBack: () => void;
+}
+
+export const OrbitalsGalleryView: React.FC<OrbitalsGalleryViewProps> = ({ onSelectOrbital, onBack }) => {
+    return (
+        <div className="flex-1 w-full flex flex-col relative overflow-auto p-4 md:p-8">
+            <div className="scanlines"></div>
+            <div className="max-w-4xl mx-auto mb-8 flex items-center relative z-10 w-full">
+                <button onClick={onBack} className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-[#00f0ff] font-bold hover:bg-white/10 transition-colors shadow-sm font-mono mr-4">⬅ 回首頁</button>
+                <h2 className="text-2xl font-black text-white tracking-widest glowing-text">3D 軌域實驗室</h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto relative z-10 w-full">
+                {['s', 'p', 'd', 'f'].map(orb => (
+                    <div key={orb} onClick={() => onSelectOrbital(orb)} className={`glass-panel rounded-2xl p-8 shadow-sm hover:shadow-[0_0_20px_rgba(0,240,255,0.2)] cursor-pointer transition-all hover:-translate-y-2 text-center border border-white/10 hover:border-[#00f0ff]/50 group`}>
+                        <div className={`w-24 h-24 mx-auto rounded-full flex items-center justify-center text-4xl font-black mb-4 border-2 ${orb==='s'?'text-[#ff1a53] border-[#ff1a53]':orb==='p'?'text-[#ff8c00] border-[#ff8c00]':orb==='d'?'text-[#00d4ff] border-[#00d4ff]':'text-[#00ff2a] border-[#00ff2a]'} bg-black/30 group-hover:scale-110 transition-transform shadow-[inset_0_0_15px_rgba(255,255,255,0.1)] font-mono`}>{orb}</div>
+                        <h3 className="font-bold text-xl mb-2 text-white font-mono">{orb} 軌域</h3>
+                        <p className="text-sm text-[#00f0ff]/70 font-mono">點擊互動查看</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+
+/* ==========================================
+   src/components/GachaView.tsx 
+   ========================================== */
+
+import React, { useState } from 'react';
+import { ElementData } from '../data';
+
+interface GachaViewProps {
+    elements: ElementData[];
+    onDraw: (el: ElementData) => void;
+    onBack: () => void;
+}
+
+export const GachaView: React.FC<GachaViewProps> = ({ elements, onDraw, onBack }) => {
+    const [isDrawing, setIsDrawing] = useState(false);
+
+    const handleDraw = () => {
+        if (isDrawing) return;
+        setIsDrawing(true);
+        setTimeout(() => {
+            const randomEl = elements[Math.floor(Math.random() * elements.length)];
+            onDraw(randomEl);
+            setIsDrawing(false);
+        }, 1000);
+    };
+
+    return (
+        <div className="flex-1 w-full flex flex-col items-center justify-center p-4 relative overflow-hidden">
+            <div className="scanlines"></div>
+            <button onClick={onBack} className="absolute top-6 left-6 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-[#00f0ff] font-bold hover:bg-white/10 transition-colors shadow-sm font-mono z-10">⬅ 回首頁</button>
+            <div className="text-center z-10">
+                <h2 className="text-4xl font-black text-white mb-2 tracking-widest glowing-text">命運盲盒抽卡機</h2>
+                <p className="text-[#00f0ff]/70 font-mono mb-10 text-sm tracking-widest">點擊卡牌，抽取你的今日專屬元素！</p>
+                <div onClick={handleDraw} className={`mx-auto w-64 h-80 rounded-2xl bg-gradient-to-br from-[#00f0ff]/20 to-[#00f0ff]/5 p-1 cursor-pointer shadow-[0_0_30px_rgba(0,240,255,0.2)] gacha-card ${isDrawing ? 'animate-shake pointer-events-none' : 'animate-float'}`}>
+                    <div className="w-full h-full border border-[#00f0ff]/50 rounded-[15px] flex flex-col items-center justify-center relative overflow-hidden bg-black/60 backdrop-blur-sm">
+                        <div className="absolute inset-0 pattern-grid opacity-30"></div>
+                        <div className="text-8xl mb-4 filter drop-shadow-[0_0_15px_rgba(0,240,255,0.5)]">{isDrawing ? '✨' : '❓'}</div>
+                        <div className="text-[#00f0ff] font-black text-xl tracking-widest font-mono">{isDrawing ? '抽取中...' : '點擊抽取'}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+/* ==========================================
+   src/components/AtomicPackingView.tsx 
+   ========================================== */
+
+import React, { useEffect, useRef, useState } from 'react';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+const PACKING_TYPES = [
+    { id: 'sc', name: '簡單立方 (SC)', desc: '配位數: 6\n空間利用率: 52%\n頂點皆有原子' },
+    { id: 'bcc', name: '體心立方 (BCC)', desc: '配位數: 8\n空間利用率: 68%\n頂點與中心有原子' },
+    { id: 'fcc', name: '面心立方 (FCC)', desc: '配位數: 12\n空間利用率: 74%\n頂點與各面中心有原子' },
+    { id: 'hcp', name: '六方最密 (HCP)', desc: '配位數: 12\n空間利用率: 74%\nABAB層狀堆積' },
+    { id: 'dfcc', name: '雙面心立方 (DFCC)', desc: '配位數: 4\n空間利用率: 34%\n兩個面心立方晶格互相穿透 (如金剛石)' }
+];
+
+interface AtomicPackingViewProps {
+    onBack: () => void;
+}
+
+const AtomicPackingView: React.FC<AtomicPackingViewProps> = ({ onBack }) => {
+    const mountRef = useRef<HTMLDivElement>(null);
+    const [packingType, setPackingType] = useState('sc');
+    const [showAxes, setShowAxes] = useState(true);
+    
+    const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+    const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+    const controlsRef = useRef<OrbitControls | null>(null);
+
+    useEffect(() => {
+        const container = mountRef.current;
+        if (!container) return;
+
+        const width = container.clientWidth || 1;
+        const height = container.clientHeight || 1;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x02111d);
+
+        const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+        camera.position.set(5, 4, 6);
+        cameraRef.current = camera;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.innerHTML = '';
+        container.appendChild(renderer.domElement);
+        rendererRef.current = renderer;
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controlsRef.current = controls;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        const axesHelper = new THREE.AxesHelper(3);
+        axesHelper.visible = showAxes;
+        scene.add(axesHelper);
+
+        const group = new THREE.Group();
+        scene.add(group);
+
+        const atomMat = new THREE.MeshPhongMaterial({ color: 0x00f0ff, shininess: 100, transparent: true, opacity: 0.8 });
+        const atomGeo = new THREE.SphereGeometry(0.4, 32, 32);
+
+        const addAtom = (x: number, y: number, z: number, scale = 1, color?: number) => {
+            const mat = color ? new THREE.MeshPhongMaterial({ color: color, shininess: 100, transparent: true, opacity: 0.8 }) : atomMat;
+            const mesh = new THREE.Mesh(atomGeo, mat);
+            mesh.position.set(x, y, z);
+            mesh.scale.set(scale, scale, scale);
+            group.add(mesh);
+        };
+
+        const addWireframeBox = (size: number) => {
+            const geo = new THREE.BoxGeometry(size, size, size);
+            const edges = new THREE.EdgesGeometry(geo);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.2 }));
+            group.add(line);
+        };
+
+        if (packingType === 'sc') {
+            const s = 1.5;
+            for (let x of [-s, s]) for (let y of [-s, s]) for (let z of [-s, s]) addAtom(x, y, z);
+            addWireframeBox(s * 2);
+        } else if (packingType === 'bcc') {
+            const s = 1.5;
+            for (let x of [-s, s]) for (let y of [-s, s]) for (let z of [-s, s]) addAtom(x, y, z);
+            addAtom(0, 0, 0);
+            addWireframeBox(s * 2);
+        } else if (packingType === 'fcc') {
+            const s = 1.5;
+            for (let x of [-s, s]) for (let y of [-s, s]) for (let z of [-s, s]) addAtom(x, y, z);
+            addAtom(s, 0, 0); addAtom(-s, 0, 0);
+            addAtom(0, s, 0); addAtom(0, -s, 0);
+            addAtom(0, 0, s); addAtom(0, 0, -s);
+            addWireframeBox(s * 2);
+        } else if (packingType === 'hcp') {
+            const r = 1.2;
+            const h = 2.0;
+            for (let layer of [-h/2, h/2]) {
+                addAtom(0, layer, 0);
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i / 6) * Math.PI * 2;
+                    addAtom(Math.cos(angle) * r, layer, Math.sin(angle) * r);
+                }
+            }
+            const midR = r * 0.58;
+            for (let i = 0; i < 3; i++) {
+                const angle = (i / 3) * Math.PI * 2 + Math.PI/6;
+                addAtom(Math.cos(angle) * midR, 0, Math.sin(angle) * midR);
+            }
+            const pts = [];
+            for(let i=0; i<=6; i++) {
+                const a = (i/6)*Math.PI*2;
+                pts.push(new THREE.Vector3(Math.cos(a)*r, h/2, Math.sin(a)*r));
+            }
+            const hexGeo = new THREE.BufferGeometry().setFromPoints(pts);
+            const hexLineTop = new THREE.Line(hexGeo, new THREE.LineBasicMaterial({color: 0x00f0ff, opacity: 0.2, transparent: true}));
+            const hexLineBottom = hexLineTop.clone(); hexLineBottom.position.y = -h/2; hexLineTop.position.y = h/2;
+            group.add(hexLineTop, hexLineBottom);
+            for(let i=0; i<6; i++) {
+                const a = (i/6)*Math.PI*2;
+                const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(Math.cos(a)*r, h/2, Math.sin(a)*r), new THREE.Vector3(Math.cos(a)*r, -h/2, Math.sin(a)*r)]);
+                group.add(new THREE.Line(lineGeo, new THREE.LineBasicMaterial({color: 0x00f0ff, opacity: 0.2, transparent: true})));
+            }
+        } else if (packingType === 'dfcc') {
+            const s = 1.5;
+            for (let x of [-s, s]) for (let y of [-s, s]) for (let z of [-s, s]) addAtom(x, y, z);
+            addAtom(s, 0, 0); addAtom(-s, 0, 0);
+            addAtom(0, s, 0); addAtom(0, -s, 0);
+            addAtom(0, 0, s); addAtom(0, 0, -s);
+            
+            const offset = s / 2;
+            addAtom(offset, offset, offset, 1, 0x10b981);
+            addAtom(offset, -offset, -offset, 1, 0x10b981);
+            addAtom(-offset, offset, -offset, 1, 0x10b981);
+            addAtom(-offset, -offset, offset, 1, 0x10b981);
+            
+            addWireframeBox(s * 2);
+        }
+
+        let frameId: number;
+        const animate = () => {
+            frameId = requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        };
+        animate();
+
+        const handleResize = () => {
+            if (!container) return;
+            const w = container.clientWidth || 1;
+            const h = container.clientHeight || 1;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        };
+
+        const resizeObserver = new ResizeObserver(() => {
+            handleResize();
+        });
+        resizeObserver.observe(container);
+
+        return () => {
+            cancelAnimationFrame(frameId);
+            resizeObserver.disconnect();
+            if (container && renderer.domElement.parentNode === container) {
+                container.removeChild(renderer.domElement);
+            }
+            renderer.dispose();
+        };
+    }, [packingType, showAxes]);
+
+    const resetView = () => {
+        if (cameraRef.current && controlsRef.current) {
+            cameraRef.current.position.set(5, 4, 6);
+            controlsRef.current.target.set(0, 0, 0);
+            controlsRef.current.update();
+        }
+    };
+
+    return (
+        <div className="flex-1 w-full flex flex-col relative overflow-hidden">
+            <div className="scanlines"></div>
+            <div className="p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-white/10 glass-panel shrink-0 relative z-10">
+                <div className="flex items-center gap-4">
+                    <button onClick={onBack} className="px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-[#00f0ff] font-bold hover:bg-white/10 transition-colors shadow-sm font-mono">⬅ 回首頁</button>
+                    <div>
+                        <h2 className="text-xl md:text-2xl font-black text-white tracking-widest glowing-text">原子堆積實驗室</h2>
+                        <p className="text-xs text-[#00f0ff]/70 font-mono whitespace-pre-line">探索晶體結構與空間排列</p>
+                    </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {PACKING_TYPES.map(t => (
+                        <button key={t.id} onClick={() => setPackingType(t.id)} className={`px-3 py-1.5 rounded-md text-xs font-mono font-bold border transition-all ${packingType === t.id ? 'bg-[#00f0ff]/20 border-[#00f0ff] text-[#00f0ff] shadow-[0_0_10px_rgba(0,240,255,0.3)]' : 'bg-black/30 border-white/10 text-white/50 hover:bg-white/10'}`}>
+                            {t.name}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative z-10">
+                <div className="flex-1 relative bg-[#02111d] min-h-[400px]">
+                    <div ref={mountRef} className="absolute inset-0 cursor-move" />
+                    <div className="absolute bottom-4 left-4 flex flex-col gap-2 z-10">
+                        <button onClick={() => setShowAxes(!showAxes)} className={`px-3 py-1.5 rounded-md text-xs font-mono font-bold border shadow-sm transition-all ${showAxes ? 'bg-[#00f0ff]/20 border-[#00f0ff] text-[#00f0ff]' : 'bg-black/30 border-white/10 text-white/50'}`}>
+                            {showAxes ? '✅ 顯示軸線' : '❌ 隱藏軸線'}
+                        </button>
+                        <button onClick={resetView} className="px-3 py-1.5 rounded-md text-xs font-mono font-bold border bg-black/30 border-white/10 text-white/70 hover:bg-white/10 shadow-sm transition-all">
+                            🔄 重設視角
+                        </button>
+                    </div>
+                    <div className="absolute top-4 right-4 glass-panel p-4 rounded-xl border border-[#00f0ff]/30 shadow-[0_0_15px_rgba(0,240,255,0.1)] max-w-[200px] pointer-events-none z-10">
+                        <h4 className="font-black text-[#00f0ff] text-sm mb-2 font-mono">{PACKING_TYPES.find(t => t.id === packingType)?.name}</h4>
+                        <p className="text-[10px] text-white/80 font-mono leading-relaxed whitespace-pre-line">{PACKING_TYPES.find(t => t.id === packingType)?.desc}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default AtomicPackingView;
+
+
+/* ==========================================
+   src/components/ElementModal.tsx 
+   ========================================== */
+
+import React from 'react';
+import { ExternalLink, X } from 'lucide-react';
+import { ElementData } from '../data';
+import { CATEGORIES } from '../constants';
+
+interface ElementModalProps {
+    element: ElementData;
+    onClose: () => void;
+    tableMode: string;
+}
+
+export function ElementModal({ element, onClose, tableMode }: ElementModalProps) {
+    return (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md animate-fade-in" onClick={onClose}>
+            <div className="min-h-full flex items-center justify-center p-4">
+                <div className="glass-panel w-full max-w-sm rounded-2xl shadow-[0_0_30px_rgba(0,240,255,0.2)] overflow-hidden border border-[#00f0ff]/30 relative" onClick={e => e.stopPropagation()}>
+                    <button onClick={onClose} className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 border border-white/20 text-white hover:bg-white/20 transition-colors">
+                        <X size={18} />
+                    </button>
+                    <div 
+                        className="h-40 flex flex-col items-center justify-center relative border-b border-white/10"
+                        style={{ backgroundColor: `rgba(${CATEGORIES[element.cat]?.rgb || '51, 102, 255'}, 0.15)` }}
+                    >
+                        <div className="absolute inset-0 opacity-30 pattern-grid"></div>
+                        <h2 className="text-8xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]">{element.symbol}</h2>
+                        <span className="absolute top-4 left-4 bg-black/50 border border-white/20 px-3 py-1 rounded-md text-xs font-mono text-white shadow-sm">Z = {element.z}</span>
+                    </div>
+                    <div className="p-6">
+                        <div className="flex justify-between items-baseline mb-6">
+                            <h3 className="text-3xl font-bold text-white tracking-wide">{element.name}</h3>
+                            <span className="text-xs px-3 py-1 rounded-md bg-[#00f0ff]/10 text-[#00f0ff] border border-[#00f0ff]/30 font-mono">{CATEGORIES[element.cat]?.label}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                            <div className="bg-black/40 border border-white/10 p-4 rounded-xl shadow-inner"><span className="text-[10px] uppercase text-[#00f0ff] font-mono block mb-1">原子量</span><span className="font-mono text-xl font-bold text-white">{element.mass}</span></div>
+                            <div className="bg-black/40 border border-white/10 p-4 rounded-xl shadow-inner"><span className="text-[10px] uppercase text-[#00f0ff] font-mono block mb-1">狀態 (25°C)</span><span className={`font-bold text-lg ${element.phase===1?'text-blue-400':element.phase===2?'text-green-400':'text-stone-300'}`}>{element.phase === 0 ? "固體" : element.phase === 1 ? "液體" : element.phase === 2 ? "氣體" : "未知"}</span></div>
+                        </div>
+                        {tableMode === 'config' ? (
+                            <div className="bg-black/60 border border-white/10 rounded-xl p-4 text-center shadow-inner"><span className="text-[10px] uppercase text-[#00f0ff] font-mono block mb-2">電子組態</span><span className="font-mono text-[#00f0ff] text-lg tracking-widest">{element.config}</span></div>
+                        ) : (
+                            <div className="bg-[#00f0ff]/5 border border-[#00f0ff]/20 rounded-xl p-4 text-left shadow-sm"><span className="text-[10px] uppercase text-[#00f0ff] font-mono block mb-2">角色屬性</span><p className="text-sm text-white/80 leading-relaxed">「{CATEGORIES[element.cat]?.desc}」</p></div>
+                        )}
+                        <div className="mt-8 flex gap-3">
+                            <a href={`https://zh.wikipedia.org/wiki/${element.name}`} target="_blank" rel="noopener noreferrer" className="flex-1 py-3 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl font-mono font-bold transition-all text-center flex items-center justify-center gap-2">
+                                <ExternalLink className="w-5 h-5" />
+                                維基百科
+                            </a>
+                            <button onClick={onClose} className="flex-1 py-3 bg-[#00f0ff]/20 hover:bg-[#00f0ff]/40 border border-[#00f0ff]/50 text-[#00f0ff] rounded-xl font-mono font-bold transition-all shadow-[0_0_15px_rgba(0,240,255,0.1)] hover:shadow-[0_0_20px_rgba(0,240,255,0.3)]">關閉終端機</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+
+/* ==========================================
+   src/components/OrbitalModal.tsx 
+   ========================================== */
+
+import React, { useState, useEffect } from 'react';
+import { ThreeOrbital } from './ThreeOrbital';
+
+export const OrbitalModal = ({ type, onClose }: { type: string, onClose: () => void }) => {
+    const orbitalInfo: Record<string, any> = {
+        s: { 
+            title: "s 軌域 (球形)", desc: "最單純的球對稱形狀。電子出現機率只與距離有關，與方向無關。", capacity: "2e⁻",
+            subTypes: [{ id: 's', label: 's 軌域' }]
+        },
+        p: { 
+            title: "p 軌域 (啞鈴形)", desc: "具有方向性 (x, y, z 三軸)。形狀如啞鈴，兩個葉片在原子核處交會形成節點。", capacity: "6e⁻",
+            subTypes: [
+                { id: 'px', label: <>p<sub>x</sub></> },
+                { id: 'py', label: <>p<sub>y</sub></> },
+                { id: 'pz', label: <>p<sub>z</sub></> }
+            ]
+        },
+        d: { 
+            title: "d 軌域 (花瓣形)", desc: "形狀複雜，主要為四葉花瓣狀 (Cloverleaf) 或啞鈴加環形，分布於不同的幾何平面上。", capacity: "10e⁻",
+            subTypes: [
+                { id: 'dxy', label: <>d<sub>xy</sub></> },
+                { id: 'dyz', label: <>d<sub>yz</sub></> },
+                { id: 'dzx', label: <>d<sub>zx</sub></> },
+                { id: 'dx2-y2', label: <>d<sub>x²-y²</sub></> },
+                { id: 'dz2', label: <>d<sub>z²</sub></> }
+            ]
+        },
+        f: { 
+            title: "f 軌域 (複雜立體)", desc: "極度複雜的多葉立體結構，具有多個節面，常見於鑭系與錒系元素。", capacity: "14e⁻",
+            subTypes: [
+                { id: 'f_general', label: '綜合示意' },
+                { id: 'f_xyz', label: <>f<sub>xyz</sub> (八葉)</> },
+                { id: 'f_z3', label: <>f<sub>z³</sub> (雙環)</> }
+            ]
+        }
+    };
+
+    const data = orbitalInfo[type];
+    const [currentSubType, setCurrentSubType] = useState(data.subTypes[0].id);
+
+    useEffect(() => {
+        setCurrentSubType(orbitalInfo[type].subTypes[0].id);
+    }, [type]);
+    
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in" onClick={onClose}>
+            <div className="glass-panel w-full max-w-sm rounded-2xl shadow-[0_0_30px_rgba(0,240,255,0.2)] overflow-hidden flex flex-col max-h-[90vh] border border-[#00f0ff]/30" onClick={e => e.stopPropagation()}>
+                <div className="bg-black/40 p-4 text-center border-b border-white/10 relative">
+                    <h2 className="text-2xl font-black text-white tracking-widest glowing-text">{data.title}</h2>
+                    <button onClick={onClose} className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-md bg-white/5 hover:bg-[#00f0ff]/20 text-[#00f0ff] font-bold transition-colors border border-white/10 hover:border-[#00f0ff]/50">✕</button>
+                </div>
+                
+                <div className="flex flex-wrap justify-center gap-2 p-3 bg-black/20 border-b border-white/10 shadow-inner">
+                    {data.subTypes.map((st: any) => (
+                        <button 
+                            key={st.id} 
+                            onClick={() => setCurrentSubType(st.id)}
+                            className={`px-4 py-1.5 text-sm rounded-md font-mono font-bold transition-all duration-200 ${
+                                currentSubType === st.id 
+                                ? 'bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff] shadow-[0_0_10px_rgba(0,240,255,0.3)] scale-105' 
+                                : 'bg-black/30 text-white/50 border border-white/10 hover:bg-white/10'
+                            }`}
+                        >
+                            {st.label}
+                        </button>
+                    ))}
+                </div>
+
+                <div className="h-64 w-full relative bg-[#02111d] border-b border-white/10">
+                    <ThreeOrbital type={type} subType={currentSubType} />
+                    <div className="absolute top-2 right-2 bg-black/50 border border-white/10 px-2 py-1 rounded-md text-[10px] font-mono font-bold shadow-sm pointer-events-none text-[#00f0ff]/70">🖱️ DRAG TO ROTATE</div>
+                    
+                    {/* 軸線圖例 (Axis Legend) */}
+                    <div className="absolute bottom-2 left-2 flex gap-1.5 pointer-events-none">
+                        <div className="flex items-center gap-1 bg-black/50 px-1.5 py-0.5 rounded shadow-sm text-[10px] font-mono font-bold text-white/70 border border-white/10">
+                            <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_5px_#ef4444]"></div>X
+                        </div>
+                        <div className="flex items-center gap-1 bg-black/50 px-1.5 py-0.5 rounded shadow-sm text-[10px] font-mono font-bold text-white/70 border border-white/10">
+                            <div className="w-2 h-2 rounded-full bg-[#00cc00] shadow-[0_0_5px_#22c55e]"></div>Y
+                        </div>
+                        <div className="flex items-center gap-1 bg-black/50 px-1.5 py-0.5 rounded shadow-sm text-[10px] font-mono font-bold text-white/70 border border-white/10">
+                            <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_5px_#3b82f6]"></div>Z
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="p-6 bg-black/40">
+                    <p className="text-sm text-white/80 mb-4 leading-relaxed font-sans">{data.desc}</p>
+                    <div className="flex justify-between border-b border-white/10 pb-2 font-mono">
+                        <span className="font-bold text-[#00f0ff]/70">MAX CAPACITY</span>
+                        <span className="font-black text-[#00f0ff] drop-shadow-[0_0_5px_rgba(0,240,255,0.5)]">{data.capacity}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+/* ==========================================
+   src/components/SplashScreen.tsx 
+   ========================================== */
+
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+
+export function SplashScreen() {
+    const [isVisible, setIsVisible] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsVisible(false);
+        }, 2500); // 2.5 seconds visibility
+        return () => clearTimeout(timer);
+    }, []);
+
+    return (
+        <AnimatePresence>
+            {isVisible && (
+                <motion.div
+                    initial={{ opacity: 1 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.8, ease: "easeInOut" }}
+                    className="fixed inset-0 z-[10000] flex items-center justify-center bg-[#02111d] overflow-hidden"
+                >
+                    {/* Background effects consistent with the app theme */}
+                    <div className="absolute inset-0 opacity-20 pointer-events-none" 
+                         style={{ backgroundImage: 'radial-gradient(circle, #00f0ff 1px, transparent 1px)', backgroundSize: '30px 30px' }}>
+                    </div>
+                    
+                    <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
+                        className="relative z-10 text-center px-6"
+                    >
+                        <motion.h1 
+                            className="text-3xl md:text-5xl font-black text-white mb-6 tracking-widest glowing-text"
+                            animate={{ 
+                                textShadow: [
+                                    "0 0 10px rgba(0, 240, 255, 0.5)", 
+                                    "0 0 25px rgba(0, 240, 255, 0.8)", 
+                                    "0 0 10px rgba(0, 240, 255, 0.5)"
+                                ]
+                            }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                        >
+                            歡迎來到恆河水元素週期表
+                        </motion.h1>
+                        
+                        <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: "100%" }}
+                            transition={{ delay: 0.5, duration: 1.5, ease: "easeInOut" }}
+                            className="h-[2px] bg-gradient-to-r from-transparent via-[#00f0ff] to-transparent max-w-sm mx-auto shadow-[0_0_8px_#00f0ff]"
+                        />
+                        
+                        <motion.p 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 0.6 }}
+                            transition={{ delay: 1.2, duration: 0.5 }}
+                            className="mt-6 text-[#00f0ff] font-mono text-xs tracking-widest uppercase"
+                        >
+                            Loading Exploratory Systems...
+                        </motion.p>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+}
+
+

@@ -1,0 +1,11 @@
+import * as TWEEN from '@tweenjs/tween.js';
+const group = new TWEEN.Group();
+const obj = {x: 0};
+const t = new TWEEN.Tween(obj, group).to({x: 100}, 1000).start(0);
+group.add(t);
+group.update(0);
+console.log(obj.x);
+group.update(100);
+console.log(obj.x);
+group.update(1000);
+console.log(obj.x);
